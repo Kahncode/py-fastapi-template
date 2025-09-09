@@ -1,0 +1,35 @@
+{
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "python.analysis.typeCheckingMode": "strict",
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.useLibraryCodeForTypes": true,
+    "terminal.integrated.profiles.windows": {
+        "Python venv": {
+            "path": "cmd.exe",
+            "args": [
+                "/k",
+                ".venv\\Scripts\\activate.bat"
+            ]
+        }
+    },
+    "terminal.integrated.profiles.linux": {
+        "Python venv": {
+            "path": "/bin/bash",
+            "args": ["-c", "source .venv/bin/activate && exec bash"]
+        }
+    },
+    "terminal.integrated.profiles.osx": {
+        "Python venv": {
+        "path": "/bin/zsh",
+        "args": ["-c", "source .venv/bin/activate && exec zsh"]
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "Python venv",
+    "terminal.integrated.defaultProfile.linux": "Python venv",
+    "terminal.integrated.defaultProfile.osx": "Python venv"
+}

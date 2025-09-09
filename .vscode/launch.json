@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run FastAPI (uvicorn)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "src.main:app",
+                "--reload",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8080"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Run FastAPI (fastapi run)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "fastapi",
+            "args": [
+                "run",
+                "src/main.py",
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}

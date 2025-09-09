@@ -1,0 +1,12 @@
+[tool.black]
+line-length = 120
+target-version = ['py313']
+skip-string-normalization = false
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+fix = true
+fixable = ["ALL"]
+select = ["ALL"]
+ignore = [] # Ignore specific rules if they conflict with Black
