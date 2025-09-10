@@ -3,6 +3,8 @@
 A clean, opinionated starter template for building APIs with [FastAPI](https://fastapi.tiangolo.com/) in Python.
 Use this project as a reference or starting point for your FastAPI or other Python API projects.
 
+For a fully-featured example, refer to the official [Full-Stack FastAPI template](https://github.com/fastapi/full-stack-fastapi-template/).
+
 **Features:**
 - Modern Python (3.13+) support
 - Pre-configured code quality tools (Black, Ruff, pre-commit)
