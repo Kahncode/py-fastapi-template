@@ -26,7 +26,7 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 
 # Install pre-commit hooks
-pre-commit install
+pre-commit install --install-hooks
 pre-commit autoupdate
 
 echo "Project environment initialized successfully!"

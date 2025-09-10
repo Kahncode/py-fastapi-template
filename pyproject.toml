@@ -9,4 +9,5 @@ target-version = "py313"
 fix = true
 fixable = ["ALL"]
 select = ["ALL"]
-ignore = [] # Ignore specific rules if they conflict with Black
+# Ignore specific rules if they conflict with Black or are not desired
+ignore = ["D100", "D101", "D102", "D103", "D104"] # Docstring related rules for public modules, classes, functions. TODO: make this target specific files that define the openapi spec
