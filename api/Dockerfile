@@ -3,36 +3,35 @@
 # Build locally, from the repository root dir:
 # docker build -t api:latest -f api/Dockerfile .
 
-FROM python:3.13-slim
+FROM python:3.14-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Environment
 # Stop creating .pyc files → cleaner container.
 # Flush logs immediately → better visibility in logs.
-# Don't cache pip downloads → smaller image.
-# Disable pip version check → cleaner logs.
+# Don't cache uv downloads → smaller image.
 # Set Python module search path → predictable imports.
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PYTHONPATH=/app
+    UV_NO_CACHE=1 \
+    PYTHONPATH=/app \
+    PATH="/app/.venv/bin:$PATH"
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --upgrade pip 
-
 WORKDIR /app
 
 # Copy shared and api source code
 COPY ./api/ ./api/
 COPY ./shared/ ./shared/
+COPY pyproject.toml .
+COPY uv.lock .
 
 # Install Python dependencies
-RUN pip install -r shared/requirements.txt
-RUN pip install -r api/requirements.txt
+RUN uv sync --frozen --no-dev
 
 # Expose port Cloud Run expects
 # Expose port 8080 for documentation purposes. Cloud Run ignores EXPOSE, but it's good practice.

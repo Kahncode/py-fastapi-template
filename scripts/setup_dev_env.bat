@@ -7,32 +7,13 @@ SET PROJECT_ROOT=%SCRIPT_DIR%..
 PUSHD %PROJECT_ROOT%
 ECHO Initializing project in %PROJECT_ROOT%
 
-REM Create virtual environment if it doesn't exist
-IF NOT EXIST ".venv" (
-    python -m venv .venv
-    ECHO Virtual environment created at .venv
-)
+REM Ensure uv is installed and up to date
+ECHO Ensuring uv is installed and up to date...
+python -m pip install --upgrade uv
 
-REM Activate virtual environment
-CALL .venv\Scripts\activate.bat
-
-REM Upgrade pip
-python -m pip install --upgrade pip
-
-REM Install requirements from root and all subfolders
-FOR /R %%F IN (requirements.txt) DO (
-    IF EXIST "%%F" (
-        ECHO Installing requirements from %%F
-        pip install -r "%%F"
-    )
-)
-
-FOR /R %%F IN (requirements-dev.txt) DO (
-    IF EXIST "%%F" (
-        ECHO Installing requirements from %%F
-        pip install -r "%%F"
-    )
-)
+REM Install dependencies using uv sync
+ECHO Installing dependencies...
+uv sync
 
 REM Install pre-commit hooks
 pre-commit install --install-hooks

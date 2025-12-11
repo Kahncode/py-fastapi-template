@@ -11,36 +11,31 @@ cd "$PROJECT_ROOT"
 echo "Initializing project in $PROJECT_ROOT"
 
 if [ -z "$CI" ]; then
-    # Create virtual environment if it doesn't exist
-    PYTHON_BIN="${PYTHON_BIN:-python3.13}"
-    if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
-        echo "ERROR: $PYTHON_BIN not found. Install Python 3.13+ or set PYTHON_BIN." >&2
+    # Find a suitable python executable to install uv
+    if command -v python3 >/dev/null 2>&1; then
+        PYTHON_BIN="python3"
+    elif command -v python >/dev/null 2>&1; then
+        PYTHON_BIN="python"
+    else
+        echo "ERROR: No python executable found. Please install Python to bootstrap uv." >&2
         exit 1
     fi
-    if [ ! -d ".venv" ] || ! .venv/bin/python -c 'import sys;print(sys.version_info[:2] >= (3,13))' | grep -q True; then
-        rm -rf .venv
-        "$PYTHON_BIN" -m venv .venv
-        echo "Virtual environment created at .venv"
-    fi
+
+    # Ensure uv is installed and up to date
+    echo "Ensuring uv is installed and up to date using $PYTHON_BIN..."
+    "$PYTHON_BIN" -m pip install --upgrade uv
+
+    # Install dependencies using uv sync
+    echo "Installing dependencies..."
+    uv sync
+    
     # Activate virtual environment
     source .venv/bin/activate
 else
     echo "CI environment detected: skipping venv creation and activation."
+    # In CI, we assume uv is setup by the workflow, but we need to sync
+    uv sync
 fi
-
-# Upgrade pip
-python -m pip install --upgrade pip
-
-# Install requirements from root and all subfolders
-find . -type f -name requirements.txt | while read reqfile; do
-    echo "Installing requirements from $reqfile"
-    pip install -r "$reqfile"
-done
-
-find . -type f -name requirements-dev.txt | while read reqfile; do
-    echo "Installing requirements from $reqfile"
-    pip install -r "$reqfile"
-done
 
 if [ -z "$CI" ]; then
     # Install pre-commit hooks

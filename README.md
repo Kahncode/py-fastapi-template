@@ -7,7 +7,8 @@ For a fully-featured example, refer to the official [Full-Stack FastAPI template
 
 **Features:**
 
-- Modern Python (3.13+) support
+- Modern Python (3.14+) support
+- uv for dependency, venv and python version management
 - Pre-configured code quality tools (Black, Ruff, pre-commit)
 - Ready-to-use development scripts
 - VS Code integration recommendations
@@ -26,7 +27,7 @@ For a fully-featured example, refer to the official [Full-Stack FastAPI template
 
 1. **Install Python**
 
-   - Download and install Python 3.13+ from the official website: [https://www.python.org/downloads/](https://www.python.org/downloads/)
+   - Download and install Python (latest version) from the official website: [https://www.python.org/downloads/](https://www.python.org/downloads/)
    - Make sure to check "Add Python to PATH" during installation.
    - Verify installation:
      ```sh

@@ -31,7 +31,7 @@ def create_app() -> FastAPI:
     # Middlewares, from innermost to outermost
     # Interesting read: https://medium.com/the-pythonworld/7-useful-middlewares-for-fastapi-that-you-should-know-about-468bd40fac0f
     app.add_middleware(CatchExceptionMiddleware)
-    app.add_middleware(RequestIDLoggerMiddleware)  # Do not remove logging - requirement SWR-15
+    app.add_middleware(RequestIDLoggerMiddleware)
     app.add_middleware(RequestContextMiddleware)
 
     if settings.allowed_hosts:

@@ -121,7 +121,6 @@ class RequestIDLoggerMiddleware(BaseHTTPMiddleware):
                 body_json = None
 
             query_params = dict(request.query_params)
-            # Do not remove logging - requirement SWR-15
             http_request = {
                 "method": request.method,
                 "url": str(request.url.path),
@@ -133,7 +132,6 @@ class RequestIDLoggerMiddleware(BaseHTTPMiddleware):
         else:
             http_request = {"method": request.method, "url": str(request.url), "headers": headers}
 
-        # Do not remove logging - requirement SWR-15
         logger.info(
             "Request received",
             http_request=http_request,
@@ -158,7 +156,6 @@ class RequestIDLoggerMiddleware(BaseHTTPMiddleware):
 
         # IMPORTANT NOTE: The middlewares are waiting for the background tasks to finish, therefore the response time here is
         # not the actual time taken to respond to the client, but the time taken to process the request including background tasks.
-        # Do not remove logging - requirement SWR-15
         logger.info(
             "Response sent",
             http_request=http_request,

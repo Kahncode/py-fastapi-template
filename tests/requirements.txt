@@ -1,5 +1,0 @@
-# Only add here requirements that aren't already fulfilled in shared, so that we avoid duplicating dependencies.
-pytest==9.0.2
-pytest-asyncio==1.3.0
-psycopg[binary]==3.3.2
-pytest-postgresql==7.0.2
