@@ -6,16 +6,26 @@ Use this project as a reference or starting point for your FastAPI or other Pyth
 For a fully-featured example, refer to the official [Full-Stack FastAPI template](https://github.com/fastapi/full-stack-fastapi-template/).
 
 **Features:**
+
 - Modern Python (3.13+) support
 - Pre-configured code quality tools (Black, Ruff, pre-commit)
 - Ready-to-use development scripts
 - VS Code integration recommendations
+- Reuseable "shared" library:
+  - Configuration framework
+  - Logging framework
+  - Unit test framework
+  - Useful middlewares
+  - GCP / Cloud Run utilities
+  - SFTP / GCS / S3 file storage
+  - SQL database adapter using sqlalchemy
 
 **Author:** [@kahncode](https://github.com/kahncode)
 
 ## Quickstart
 
 1. **Install Python**
+
    - Download and install Python 3.13+ from the official website: [https://www.python.org/downloads/](https://www.python.org/downloads/)
    - Make sure to check "Add Python to PATH" during installation.
    - Verify installation:
@@ -24,6 +34,7 @@ For a fully-featured example, refer to the official [Full-Stack FastAPI template
      ```
 
 2. **Set up the development environment**
+
    - After pulling the latest changes, run the setup script to update dependencies and configure git hooks:
      ```sh
      bash scripts/setup_dev_env.sh
@@ -31,6 +42,7 @@ For a fully-featured example, refer to the official [Full-Stack FastAPI template
    - This script will automatically install Python dependencies and set up pre-commit hooks for code quality.
 
 3. **Run the API locally**
+
    ```sh
    uvicorn src.main:app --reload --host 0.0.0.0 --port 8080
    ```
@@ -46,6 +58,7 @@ For a fully-featured example, refer to the official [Full-Stack FastAPI template
 - Open this folder in [Visual Studio Code](https://code.visualstudio.com/).
 - Install the [Python extension for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-python.python).
 - Use the built-in debugger:
+  - Configure visual studio to select the python interpreter from the venv (Python: Select Interpreter command)
   - Press `F5` and select the "Run FastAPI (uvicorn)" or "Run FastAPI (fastapi run)" configuration from the dropdown.
   - The API will start and you can access the docs as above.
 - You can also use the integrated terminal to run commands manually.

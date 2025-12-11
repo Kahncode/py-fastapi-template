@@ -1,0 +1,5 @@
+# Mostly for local development
+app_name: "FastAPI Template"
+app_version: "0.0.1+local"
+app_environment: "local"
+log_level: "debug"

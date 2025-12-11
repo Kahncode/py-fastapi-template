@@ -1,0 +1,15 @@
+name: Build & Push on Version Tag
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-and-push-all:
+    uses: kahncode/py-fastapi-template/.github/workflows/build-and-push.yaml@main
+    with:
+      version_tag: ${{ github.ref_name }}
+      commit: ${{ github.sha }}
+    secrets: inherit
+

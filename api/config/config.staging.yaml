@@ -1,0 +1,11 @@
+# For deployment in staging envronment
+app_name: "FastAPI Template"
+app_environment: "staging"
+app_version: "0.0.1"
+log_level: "info"
+allowed_hosts:
+  - "api.example.com"
+
+# GCP compatible logging
+# log_processors:
+#   - "shared.utils.gcp_logging.format_gcloud_logs"

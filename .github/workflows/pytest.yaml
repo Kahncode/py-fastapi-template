@@ -1,0 +1,33 @@
+name: Run Unit & Functional Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Install PostgreSQL binaries
+        run: sudo apt-get update && sudo apt-get install -y postgresql
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install requirements from all requirements.txt files
+        run: |
+          find . -type f -name requirements.txt | while read reqfile; do
+            echo "Installing requirements from $reqfile"
+            pip install -r "$reqfile"
+          done
+      - name: Run tests (tests/api/*)
+        env:
+          CONFIG_YAML_PATH: tests/config/config.yaml
+          S3_FILE_STORAGE_TEST_CONFIG: ${{ secrets.S3_FILE_STORAGE_TEST_CONFIG }}
+        run: pytest tests/api/

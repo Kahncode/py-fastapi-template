@@ -17,14 +17,25 @@ REM Activate virtual environment
 CALL .venv\Scripts\activate.bat
 
 REM Upgrade pip
-pip install --upgrade pip
+python -m pip install --upgrade pip
 
-REM Install main and dev requirements
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+REM Install requirements from root and all subfolders
+FOR /R %%F IN (requirements.txt) DO (
+    IF EXIST "%%F" (
+        ECHO Installing requirements from %%F
+        pip install -r "%%F"
+    )
+)
+
+FOR /R %%F IN (requirements-dev.txt) DO (
+    IF EXIST "%%F" (
+        ECHO Installing requirements from %%F
+        pip install -r "%%F"
+    )
+)
 
 REM Install pre-commit hooks
-pre-commit install
+pre-commit install --install-hooks
 pre-commit autoupdate
 
 POPD

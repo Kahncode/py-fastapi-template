@@ -7,7 +7,24 @@ skip-string-normalization = false
 line-length = 120
 target-version = "py313"
 fix = true
-fixable = ["ALL"]
-select = ["ALL"]
+lint.fixable = ["ALL"]
+lint.select = ["ALL"]
 # Ignore specific rules if they conflict with Black or are not desired
-ignore = ["D100", "D101", "D102", "D103", "D104"] # Docstring related rules for public modules, classes, functions. TODO: make this target specific files that define the openapi spec
+lint.ignore = ["D100", "D101", "D102", "D103", "D104", "D107", "D200", "D202", "D212", "D203", # Docstring related rules for public modules, classes, functions.
+    "COM812", "RET505", # Code style customizations
+    "E501", # Line too long (handled by Black)
+    "FIX", "TD"] # Fixme and TODO comments
+
+
+[tool.ruff.lint.flake8-bugbear]
+# Allow default arguments like, e.g., `data: List[str] = fastapi.Query(None)`.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"] # Allow use of assert statements in test files
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+postgresql_port = "5454" # Port for pytest-postgresql, to avoid conflicts with local Postgres instances
+

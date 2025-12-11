@@ -1,0 +1,44 @@
+name: Build & Push All Docker Images
+
+on:
+  workflow_call:
+    inputs:
+      commit:
+        required: true
+        type: string
+      version_tag:
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      commit:
+        required: true
+        type: string
+      version_tag:
+        required: false
+        type: string
+
+# NOTE: GitHub Actions does not support dynamic references for reusable workflows.
+# The value after '@' in 'uses:' (branch, tag, or commit SHA) must be hardcoded.
+# You cannot use expressions or variables (e.g., ${{ github.ref }}) for this reference.
+# If you need to change the workflow version dynamically, you must update this file before running the workflow.
+# See:
+# https://docs.github.com/en/actions/using-workflows/reusing-workflows#calling-a-reusable-workflow
+# https://github.com/orgs/community/discussions/45342
+# https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows#supported-keywords-for-jobs-that-call-a-reusable-workflow
+# We could sparse checkout the repository but unfortunately it wouldn't be available to the jobs.*.uses
+
+jobs:
+  build-base-images:
+    strategy:
+      matrix:
+        image:
+          - { name: "api", dockerfile: "api/Dockerfile" }
+    uses: kahncode/py-fastapi-template/.github/workflows/build-and-push.yaml@main
+    with:
+      image_name: ${{ matrix.image.name }}
+      dockerfile: ${{ matrix.image.dockerfile }}
+      commit: ${{ inputs.commit }}
+      version_tag: ${{ inputs.version_tag }}
+    secrets: inherit
+

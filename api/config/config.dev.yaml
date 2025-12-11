@@ -1,0 +1,11 @@
+# For deployment in dev envronment
+app_name: "FastAPI Template"
+app_environment: "dev"
+app_version: "0.0.1"
+log_level: "debug"
+allowed_hosts:
+  - "api.example.com"
+
+# GCP compatible logging
+# log_processors:
+#   - "shared.utils.gcp_logging.format_gcloud_logs"

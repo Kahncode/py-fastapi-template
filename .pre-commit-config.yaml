@@ -12,27 +12,27 @@ repos:
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
-    - id: detect-secrets
-      args: ['--baseline', '.secrets.baseline']
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.12.12
+    rev: v0.14.8
     hooks:
       # Run the linter.
       - id: ruff-check
         types: [python]
-        args: [ --fix ]
+        args: [--fix]
       # Run the formatter.
-      - id: ruff-format
-        types: [python]
-
+      # Disabled as it conflicts with black.
+      #- id: ruff-format
+      #  types: [python]
 
   - repo: https://github.com/psf/black
-    rev: 25.1.0
+    rev: 25.12.0
     hooks:
       - id: black
         name: black
-        language_version: python3  # use the Python 3 interpreter pre-commit provides
+        language_version: python3 # use the Python 3 interpreter pre-commit provides
         types: [python]
         stages: [pre-commit]

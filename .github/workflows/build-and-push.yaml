@@ -1,0 +1,112 @@
+name: Build & Push One Docker Image
+
+on:
+  workflow_call:
+    inputs:
+      image_name:
+        required: true
+        type: string
+      dockerfile:
+        required: true
+        type: string
+      commit:
+        required: true
+        type: string
+      version_tag:
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      image_name:
+        required: true
+        type: string
+      dockerfile:
+        required: true
+        type: string
+      commit:
+        required: true
+        type: string
+      version_tag:
+        required: false
+        type: string
+
+jobs:
+  build-push-image:
+    environment: gcp_artifact_repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print environment variables
+        run: |
+          env
+          echo "GCP_PROJECT_ID = ${{ vars.GCP_PROJECT_ID }}"
+          if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
+            echo "GCP_SA_KEY is empty"
+          else
+            echo "GCP_SA_KEY is set"
+          fi
+
+      - name: Fetch all git refs
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve full commit SHA
+        id: get_sha
+        run: |
+          sha=$(git rev-parse ${{ inputs.commit }})
+          echo "Commit SHA: $sha"
+          echo "COMMIT_SHA=$sha" >> $GITHUB_ENV
+          if [ "${{ inputs.version_tag }}" != "" ]; then
+            tag_sha=$(git rev-parse ${{ inputs.version_tag }})
+            echo "Tag SHA: $tag_sha"
+            if [ "$sha" != "$tag_sha" ]; then
+              echo "Error: version_tag does not point to the same commit as commit input!" >&2
+              exit 1
+            fi
+          fi
+
+      - name: Checkout repo
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.COMMIT_SHA }}
+          lfs: true
+
+      # For some reaason this is not handled by checkout with lfs: true, so let's call it manually
+      - name: git lfs pull
+        run: git lfs pull
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Authenticate Docker
+        run: gcloud auth configure-docker europe-west1-docker.pkg.dev
+
+      - name: Set environment, repo and image paths
+        run: |
+          IMAGE_REPO=europe-west1-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/api/
+          echo "IMAGE_REPO=${IMAGE_REPO}" >> $GITHUB_ENV
+          echo "IMAGE_COMMIT=${IMAGE_REPO}${{ inputs.image_name }}:${{ env.COMMIT_SHA }}" >> $GITHUB_ENV
+          echo "IMAGE_VERSION=${IMAGE_REPO}${{ inputs.image_name }}:${{ inputs.version_tag }}" >> $GITHUB_ENV
+
+      - name: Build and Push Docker image (commit tag)
+        run: |
+          if docker pull ${{ env.IMAGE_COMMIT }}; then
+            echo "Image found, skipping build: ${{ env.IMAGE_COMMIT }}"
+          else
+            echo "Image not found, building image."
+            docker build --build-arg BASE_IMAGE_VERSION=${{ env.COMMIT_SHA }} --build-arg BASE_REPO=${{ env.IMAGE_REPO }} -t ${{ env.IMAGE_COMMIT }} -f ${{ inputs.dockerfile }} .
+            docker push ${{ env.IMAGE_COMMIT }}
+          fi
+
+      - name: Tag and Push Docker image (version tag)
+        if: ${{ inputs.version_tag != '' }}
+        run: |
+          docker tag ${{ env.IMAGE_COMMIT }} ${{ env.IMAGE_VERSION }}
+          docker push ${{ env.IMAGE_VERSION }}

@@ -214,3 +214,19 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Bruno
+# By convention we store all the bruno config files in .bruno/ to be ignored
+.bruno/
+
+# Local storage service for development
+.tmp/
+.secrets/
+
+# Generated docs
+/openapi.json
+/redoc.html
+/swagger.html
+
+# Ignore alembic's log/config to avoid local overrides
+alembic.ini
