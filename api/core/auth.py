@@ -14,9 +14,9 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 async def authorize_api_key(bearer: HTTPAuthorizationCredentials | None = Depends(bearer_scheme)) -> None:
     if bearer and bearer.scheme.lower() == "bearer":
-        _api_key = bearer.credentials
-        authorized: bool = True
-        api_key_valid: bool = True
+        api_key = bearer.credentials
+        api_key_valid: bool = len(api_key) > 0
+        authorized: bool = api_key_valid
 
         if not api_key_valid:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")

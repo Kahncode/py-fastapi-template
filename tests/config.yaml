@@ -1,0 +1,13 @@
+# Configuration used for unit and integration tests, locally or in CI/CD pipelines
+app_name: "FastAPI Template Test"
+app_version: "2.0.0+test"
+app_environment: "local"
+log_level: "debug"
+
+services:
+  - type: "shared.services.local_file_storage.LocalFileStorageService"
+    root_path: "./.tmp"
+  - type: "shared.services.sql_db.SQLDatabaseService"
+    # For integration tests, this will connect to the pytest-postgresql instance,
+    # For unit tests, the url is dynamically filled, see conftest.py for more details
+    url: "postgresql://postgres:postgres@host.docker.internal:54322/postgres"
