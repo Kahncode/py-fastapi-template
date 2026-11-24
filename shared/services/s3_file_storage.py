@@ -47,7 +47,7 @@ class S3FileStorageService(FileStorageService):
                 endpoint_url=self.endpoint_url,
             )
             logger.debug("Successfully created S3 client", bucket=self.bucket_name)
-        except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError):
+        except botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError:
             logger.exception("Failed to create S3 client", bucket=self.bucket_name)
             raise
         else:
@@ -77,7 +77,7 @@ class S3FileStorageService(FileStorageService):
                 await s3_client.put_object(Bucket=self.bucket_name, Key=s3_path, Body=file, ContentType=mime_type)
                 logger.debug("Wrote S3 file", s3_path=s3_path)
                 return True
-        except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError):
+        except botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError:
             logger.exception("Error saving file to S3", s3_path=s3_path)
             return False
 
@@ -88,6 +88,6 @@ class S3FileStorageService(FileStorageService):
             async with await self.get_client() as s3_client:
                 response = await s3_client.list_objects_v2(Bucket=self.bucket_name, Prefix=s3_path, MaxKeys=1)
                 return "Contents" in response and any(obj["Key"] == s3_path for obj in response["Contents"])
-        except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError):
+        except botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError:
             get_logger().exception("Failed list_objects_v2", bucket=self.bucket_name)
             return False

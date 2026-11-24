@@ -22,7 +22,7 @@ client = AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
 async def test_auth(keys: list[tuple[str | None, HTTPStatus]]) -> None:
     for key, expected_status in keys:
         # Test the api_key_service directly
-        bearer = HTTPAuthorizationCredentials(scheme="Bearer", credentials=key if key else "")
+        bearer = HTTPAuthorizationCredentials(scheme="Bearer", credentials=key or "")
         try:
             await authorize_api_key(bearer=bearer)
         except HTTPException as e:

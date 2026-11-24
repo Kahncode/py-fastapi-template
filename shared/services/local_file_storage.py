@@ -28,7 +28,7 @@ class LocalFileStorageService(FileStorageService):
         try:
             with local_path.open("wb") as f:
                 f.write(file)
-        except (OSError, ValueError):
+        except OSError, ValueError:
             logger.exception("Error saving file", local_path=local_path)
             return False
         else:

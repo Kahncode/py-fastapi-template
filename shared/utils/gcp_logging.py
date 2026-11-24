@@ -44,7 +44,7 @@ def format_gcloud_logs(_logger: structlog.BoundLogger, _method_name: str, event_
                 if "user-agent" in headers_dict:
                     request_dict["userAgent"] = headers_dict["user-agent"]
 
-    except (KeyError, TypeError, AttributeError):  # Keep logging in case of unexpected structure
+    except KeyError, TypeError, AttributeError:  # Keep logging in case of unexpected structure
         pass
 
     return event_dict

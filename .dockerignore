@@ -14,3 +14,4 @@ build/
 **/Dockerfile
 **/*.md
 **/.git*
+!README.md

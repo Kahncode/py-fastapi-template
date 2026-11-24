@@ -3,7 +3,7 @@
 # Build locally, from the repository root dir:
 # docker build -t api:latest -f api/Dockerfile .
 
-FROM python:3.14-slim
+FROM python:3.15-slim
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Environment
@@ -27,7 +27,7 @@ WORKDIR /app
 # Copy shared and api source code
 COPY ./api/ ./api/
 COPY ./shared/ ./shared/
-COPY pyproject.toml .
+COPY pyproject.toml README.md .
 COPY uv.lock .
 
 # Install Python dependencies

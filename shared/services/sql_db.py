@@ -196,7 +196,7 @@ class SQLDatabaseService(BaseService):
                 )
 
                 self.session_maker = sessionmaker(class_=AsyncSession, expire_on_commit=False)
-            except (ArgumentError, OperationalError, DBAPIError):
+            except ArgumentError, OperationalError, DBAPIError:
                 logger.exception("Failed to create SQLAlchemy async engine")
                 raise
         try:

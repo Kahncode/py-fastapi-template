@@ -7,7 +7,7 @@ For a fully-featured example, refer to the official [Full-Stack FastAPI template
 
 **Features:**
 
-- Modern Python (3.14+) support
+- Modern Python (3.15+) support
 - uv for dependency, venv and python version management
 - Pre-configured code quality tools (Black, Ruff, pre-commit)
 - Ready-to-use development scripts

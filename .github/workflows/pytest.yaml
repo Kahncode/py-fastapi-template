@@ -22,6 +22,6 @@ jobs:
         run: uv sync
       - name: Run tests (tests/api/*)
         env:
-          CONFIG_YAML_PATH: tests/config/config.yaml
+          CONFIG_YAML_PATH: tests/config.yaml
           S3_FILE_STORAGE_TEST_CONFIG: ${{ secrets.S3_FILE_STORAGE_TEST_CONFIG }}
         run: uv run pytest tests/api/

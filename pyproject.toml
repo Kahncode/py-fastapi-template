@@ -3,16 +3,16 @@ name = "py-fastapi-template"
 version = "0.1.0"
 description = "FastAPI Template Project"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.15"
 dependencies = [
-    "fastapi[standard]>=0.124.0",
-    "uvicorn[standard]>=0.38.0",
-    "pydantic-settings>=2.12.0",
-    "structlog>=25.5.0",
-    "tenacity>=9.1.2",
-    "sqlalchemy>=2.0.44",
-    "asyncpg>=0.31.0",
-    "packaging>=25.0",
+    "fastapi[standard]>=0.165.0",
+    "uvicorn[standard]>=0.54.0",
+    "pydantic-settings>=2.16.3",
+    "structlog>=26.1.0",
+    "tenacity>=9.2.1",
+    "sqlalchemy[asyncio]>=2.1.9",
+    "asyncpg>=0.32.0",
+    "packaging>=26.4",
     "py-cpuinfo>=9.0.0",
 ]
 
@@ -32,31 +32,31 @@ packages = ["api", "shared"]
 # Some dependencies are purely dev or test
 # others are runtime dependencies here to be promoted once used in live code
 dev = [ 
-    "pillow>=12.0.0",
-    "google-auth>=2.43.0",
-    "requests>=2.32.5", # used internally by google-auth but not automatically installed
+    "pillow>=13.0.0",
+    "google-auth>=2.63.1",
+    "requests>=2.34.2", # used internally by google-auth but not automatically installed
     "aioboto3>=15.5.0", # used for s3-like buckets
-    "paramiko>=4.0.0",
-    "black>=25.11.0",
-    "ruff>=0.14.8",
-    "pre-commit>=4.5.0",
+    "paramiko>=5.1.0",
+    "black>=26.10.1",
+    "ruff>=0.17.6",
+    "pre-commit>=4.7.0",
     "detect-secrets>=1.5.0",
-    "google-cloud-storage>=3.6.0", # used for gcs buckets
-    "cloud-sql-python-connector[asyncpg]>=1.18.5", # used for google cloud sql only
-    "pytest>=9.0.2",
-    "pytest-asyncio>=1.3.0",
-    "psycopg[binary]>=3.3.2",
-    "pytest-postgresql>=7.0.2",
+    "google-cloud-storage>=3.17.2", # used for gcs buckets
+    "cloud-sql-python-connector[asyncpg]>=1.24.1", # used for google cloud sql only
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.5.0",
+    "psycopg[binary]>=3.3.9",
+    "pytest-postgresql>=10.0.0",
 ]
 
 [tool.black]
 line-length = 120
-target-version = ['py313']
+target-version = ['py315']
 skip-string-normalization = false
 
 [tool.ruff]
 line-length = 120
-target-version = "py313"
+target-version = "py315"
 fix = true
 lint.fixable = ["ALL"]
 lint.select = ["ALL"]
@@ -64,7 +64,9 @@ lint.select = ["ALL"]
 lint.ignore = ["D100", "D101", "D102", "D103", "D104", "D107", "D200", "D202", "D212", "D203", # Docstring related rules for public modules, classes, functions.
     "COM812", "RET505", # Code style customizations
     "E501", # Line too long (handled by Black)
-    "FIX", "TD"] # Fixme and TODO comments
+    "FIX", "TD", # Fixme and TODO comments
+    "CPY",
+    "TC001", "TC002", "TC003"] # typing-only imports: conflict with FastAPI/pydantic runtime annotations
 
 
 [tool.ruff.lint.flake8-bugbear]
@@ -77,6 +79,7 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 postgresql_port = "5454" # Port for pytest-postgresql, to avoid conflicts with local Postgres instances
 
 

@@ -109,7 +109,7 @@ class RequestIDLoggerMiddleware(BaseHTTPMiddleware):
         request.state.logger = logger
 
         # Exclude sensitive headers
-        headers = {k: v for k, v in request.headers.items() if k.lower() not in ["authorization"]}
+        headers = {k: v for k, v in request.headers.items() if k.lower() != "authorization"}
         http_request = {}
 
         if self.log_full:
@@ -117,7 +117,7 @@ class RequestIDLoggerMiddleware(BaseHTTPMiddleware):
             body = await request.body()
             try:
                 body_json = json.loads(body.decode()) if body else None
-            except (json.JSONDecodeError, UnicodeDecodeError, RuntimeError):
+            except json.JSONDecodeError, UnicodeDecodeError, RuntimeError:
                 body_json = None
 
             query_params = dict(request.query_params)

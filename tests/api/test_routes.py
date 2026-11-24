@@ -1,9 +1,8 @@
 import importlib
 
 import pytest
-from fastapi.routing import APIRoute
 
-from api.main import app
+from tests.utils.route_utils import iter_api_routes
 
 # Fill this list with all routes and their corresponding test function names (as a list)
 TESTED_ROUTES = [
@@ -36,7 +35,7 @@ TESTED_ROUTES = [
 
 
 def test_all_routes_have_tests() -> None:
-    app_routes = [route for route in app.routes if isinstance(route, APIRoute)]
+    app_routes = list(iter_api_routes())
     app_route_keys = {(route.path, next(iter(route.methods))) for route in app_routes}
     tested_route_keys = {(path, method) for (path, method, _) in TESTED_ROUTES}
 

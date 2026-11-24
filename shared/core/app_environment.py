@@ -1,8 +1,8 @@
-from enum import Enum
+from enum import StrEnum
 
 
 # Enum for environment type, moved here for reuseability
-class AppEnvironment(str, Enum):
+class AppEnvironment(StrEnum):
     LOCAL = "local"
     DEVELOPMENT = "dev"
     STAGING = "staging"

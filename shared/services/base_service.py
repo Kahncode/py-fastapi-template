@@ -21,7 +21,7 @@ class BaseService(ABC):
         return self
 
     async def __aexit__(
-        self, exc_type: type[BaseException] | None, exc: BaseException | None, tb: TracebackType | None  # noqa: A003
+        self, exc_type: type[BaseException] | None, exc: BaseException | None, tb: TracebackType | None
     ) -> None:
         """
         Cleanup context dependent variables.
