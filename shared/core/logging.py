@@ -6,10 +6,8 @@ import uuid
 
 import structlog
 from fastapi import Request
-from starlette.concurrency import iterate_in_threadpool
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.responses import Response
-from starlette.types import ASGIApp
+from starlette.datastructures import MutableHeaders
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from shared.core.config import AppEnvironment, get_settings
 from shared.core.request_context import request_context
@@ -93,14 +91,47 @@ def configure_logging() -> None:
         logging.basicConfig(level=get_settings().log_level.upper())
 
 
-# Middleware to assign request_id and logger
-class RequestIDLoggerMiddleware(BaseHTTPMiddleware):
+# Response bodies larger than this are not logged (they are always streamed through untouched)
+MAX_LOGGED_RESPONSE_BODY_BYTES = 64 * 1024
+
+
+async def _buffer_request_body(receive: Receive) -> tuple[Receive, bytes]:
+    """Read the whole request body and return it with a `receive` that replays it to the downstream app."""
+    chunks: list[bytes] = []
+    while True:
+        message = await receive()
+        if message["type"] != "http.request":
+            break  # client disconnected
+        chunks.append(message.get("body", b""))
+        if not message.get("more_body", False):
+            break
+    body = b"".join(chunks)
+    replayed = False
+
+    async def replay() -> Message:
+        nonlocal replayed
+        if not replayed:
+            replayed = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        return await receive()
+
+    return replay, body
+
+
+# Pure ASGI middleware to assign request_id and logger
+class RequestIDLoggerMiddleware:
 
     def __init__(self, app: ASGIApp, *, log_full: bool = True) -> None:
-        super().__init__(app)
+        self.app = app
         self.log_full = log_full
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        request = Request(scope)
+
         # Generate or propagate request ID
         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
 
@@ -113,8 +144,8 @@ class RequestIDLoggerMiddleware(BaseHTTPMiddleware):
         http_request = {}
 
         if self.log_full:
-            # Read request body (works for JSON, not for form/multipart)
-            body = await request.body()
+            # Read request body (works for JSON, not for form/multipart) and replay it for the app
+            receive, body = await _buffer_request_body(receive)
             try:
                 body_json = json.loads(body.decode()) if body else None
             except json.JSONDecodeError, UnicodeDecodeError, RuntimeError:
@@ -138,38 +169,49 @@ class RequestIDLoggerMiddleware(BaseHTTPMiddleware):
         )
 
         start_time = time.perf_counter()
-        response = await call_next(request)
-        processing_time_ms = int((time.perf_counter() - start_time) * 1000)
+        status_code = 0
+        processing_time_ms = 0
+        body_chunks: list[bytes] = []
+        body_size = 0
+        body_truncated = False
 
+        async def send_wrapper(message: Message) -> None:
+            nonlocal status_code, processing_time_ms, body_size, body_truncated
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+                processing_time_ms = int((time.perf_counter() - start_time) * 1000)
+                # Inject request_id into response headers
+                MutableHeaders(scope=message)["X-Request-ID"] = request_id
+            elif message["type"] == "http.response.body" and not body_truncated:
+                chunk = message.get("body", b"")
+                body_size += len(chunk)
+                if body_size > MAX_LOGGED_RESPONSE_BODY_BYTES:
+                    body_truncated = True
+                    body_chunks.clear()
+                else:
+                    body_chunks.append(chunk)
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
+
+        # Stringified response body object, None if empty, too large or not text
+        res_body: str | None
         try:
-            res_body = [
-                section async for section in response.body_iterator  # pyright: ignore[reportAttributeAccessIssue]
-            ]
-            response.body_iterator = iterate_in_threadpool(  # pyright: ignore[reportAttributeAccessIssue]
-                iter(res_body)
-            )
-
-            # Stringified response body object
-            res_body = res_body[0].decode()
-        except Exception:  # noqa: BLE001
+            res_body = None if body_truncated else (b"".join(body_chunks).decode() or None)
+        except UnicodeDecodeError:
             res_body = None
 
-        # IMPORTANT NOTE: The middlewares are waiting for the background tasks to finish, therefore the response time here is
-        # not the actual time taken to respond to the client, but the time taken to process the request including background tasks.
+        # IMPORTANT NOTE: This is logged once the app has fully returned (body streamed, background tasks done), but
+        # processing_time is measured up to the start of the response, i.e. the time taken to produce it.
         logger.info(
             "Response sent",
             http_request=http_request,
             http_response={
-                "status_code": response.status_code,
+                "status_code": status_code,
                 "body": res_body,
                 "processing_time": processing_time_ms,
             },
         )
-
-        # Inject request_id into response headers
-        response.headers["X-Request-ID"] = request_id
-
-        return response
 
 
 # always returns a logger, without context if necessary
@@ -181,7 +223,8 @@ def get_logger(request: Request = None) -> structlog.BoundLogger:  # pyright: ig
     except LookupError:
         return structlog.stdlib.get_logger()
     else:
-        return ctx_request.state.logger
+        # No logger is bound for connections the logging middleware skips, such as WebSockets
+        return getattr(ctx_request.state, "logger", None) or structlog.stdlib.get_logger()
 
 
 def get_request_id(request: Request = None) -> str | None:
