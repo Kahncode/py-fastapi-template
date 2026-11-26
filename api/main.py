@@ -5,7 +5,6 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 
 from api.core.config import get_settings
-from api.core.dev_routes import router as dev_router
 from shared.core.catch_exception_middleware import CatchExceptionMiddleware
 from shared.core.logging import RequestIDLoggerMiddleware, configure_logging, get_logger
 from shared.core.request_context import RequestContextMiddleware
@@ -48,6 +47,9 @@ def create_app() -> FastAPI:
     app.include_router(system_router, prefix="/v1/system")
 
     if settings.is_dev_environment():
+        # Imported lazily: dev_routes raises at import outside development environments
+        from api.core.dev_routes import router as dev_router  # noqa: PLC0415
+
         app.include_router(dev_router, prefix="/dev")
 
     end_time = time.perf_counter()

@@ -215,7 +215,7 @@ class RequestIDLoggerMiddleware:
 
 
 # always returns a logger, without context if necessary
-def get_logger(request: Request | None = None) -> structlog.BoundLogger:
+def get_logger(request: Request = None) -> structlog.BoundLogger:  # pyright: ignore[reportArgumentType]
     if request:
         return request.state.logger
     try:
@@ -227,7 +227,7 @@ def get_logger(request: Request | None = None) -> structlog.BoundLogger:
         return getattr(ctx_request.state, "logger", None) or structlog.stdlib.get_logger()
 
 
-def get_request_id(request: Request | None = None) -> str | None:
+def get_request_id(request: Request = None) -> str | None:  # pyright: ignore[reportArgumentType]
     if request:
         return getattr(request.state, "request_id", None)
     try:
