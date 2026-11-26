@@ -45,7 +45,7 @@ For a fully-featured example, refer to the official [Full-Stack FastAPI template
 3. **Run the API locally**
 
    ```sh
-   uvicorn src.main:app --reload --host 0.0.0.0 --port 8080
+   uvicorn api.main:app --reload --host 0.0.0.0 --port 8080
    ```
 
 4. **Access the interactive API docs**
