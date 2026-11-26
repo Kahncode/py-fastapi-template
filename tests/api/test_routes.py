@@ -24,6 +24,24 @@ TESTED_ROUTES = [
         ["api.test_system.test_system_version"],
     ),
     ("/version", "GET", ["api.test_system.test_system_version"]),
+    (
+        "/v1/system/ready",
+        "GET",
+        [
+            "api.test_system.test_ready_healthy",
+            "api.test_system.test_ready_database_down",
+            "api.test_system.test_ready_without_database",
+        ],
+    ),
+    (
+        "/ready",
+        "GET",
+        [
+            "api.test_system.test_ready_healthy",
+            "api.test_system.test_ready_database_down",
+            "api.test_system.test_ready_without_database",
+        ],
+    ),
     ("/dev/test/auth", "GET", ["api.test_auth.test_auth"]),  # Unit test only
     ("/dev/test/database", "GET", [None]),  # Explicitly not tested
     ("/dev/test/logging", "POST", [None]),  # Explicitly not tested

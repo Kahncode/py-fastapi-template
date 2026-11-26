@@ -20,8 +20,8 @@ jobs:
         uses: astral-sh/setup-uv@v3
       - name: Install dependencies
         run: uv sync
-      - name: Run tests (tests/api/*)
+      - name: Run tests (tests/api/*, tests/utils/*)
         env:
           CONFIG_YAML_PATH: tests/config.yaml
           S3_FILE_STORAGE_TEST_CONFIG: ${{ secrets.S3_FILE_STORAGE_TEST_CONFIG }}
-        run: uv run pytest tests/api/
+        run: uv run pytest tests/api/ tests/utils/

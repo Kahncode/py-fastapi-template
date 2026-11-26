@@ -1,14 +1,20 @@
 import asyncio
 import os
 import platform
+from http import HTTPStatus
+from typing import Annotated
 
 import cpuinfo
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, Depends, FastAPI, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from shared.core.app_environment import AppEnvironment, get_environment_suffix
 from shared.core.config import get_settings
+from shared.core.logging import get_logger
 from shared.core.logging import test_logging as test_logging_function
+from shared.services.service import get_service
+from shared.services.sql_db import SQLDatabaseService
 
 router = APIRouter(tags=["system"])
 
@@ -36,6 +42,30 @@ def version(request: Request) -> Version:
     """Return the global app name and version."""
     # Note: this could also be fetched directly from settings
     return Version(name=request.app.title, version=request.app.version)
+
+
+@router.get("/ready")
+async def ready(
+    db_service: Annotated[SQLDatabaseService | None, Depends(get_service(SQLDatabaseService))],
+) -> JSONResponse:
+    """
+    Readiness probe for load balancers and orchestrators.
+
+    Returns 503 when the configured database is unreachable, and 200 otherwise, including when no
+    database service is configured (in which case "database" is null in the response).
+    """
+    database_ready: bool | None = None
+    if db_service is not None:
+        try:
+            database_ready = await db_service.test_connection()
+        except Exception:  # noqa: BLE001 - any database failure means the app is not ready
+            get_logger().exception("Readiness probe database check failed")
+            database_ready = False
+    if database_ready is False:
+        return JSONResponse(
+            status_code=HTTPStatus.SERVICE_UNAVAILABLE, content={"status": "unhealthy", "database": False}
+        )
+    return JSONResponse(content={"status": "ok", "database": database_ready})
 
 
 dev_router = APIRouter(tags=["dev"])
