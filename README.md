@@ -52,6 +52,12 @@ For a fully-featured example, refer to the official [Full-Stack FastAPI template
    - Open [http://localhost:8080/docs](http://localhost:8080/docs) in your browser for Swagger UI.
    - Or [http://localhost:8080/redoc](http://localhost:8080/redoc) for ReDoc.
 
+## Examples
+
+The [`examples/`](./examples/) folder contains small, self-contained example implementations built on this template:
+a CRUD router, background task handling, JWT/OAuth2 auth, custom log processors, and rate limiting.
+They are reference code only: they are excluded from the built wheel and the Docker image, and can be removed with `rm -rf examples/`.
+
 ## Development environment with VS Code
 
 ### Running Locally

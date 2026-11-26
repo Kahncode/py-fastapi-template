@@ -31,7 +31,7 @@ packages = ["api", "shared"]
 [dependency-groups]
 # Some dependencies are purely dev or test
 # others are runtime dependencies here to be promoted once used in live code
-dev = [ 
+dev = [
     "pillow>=13.0.0",
     "google-auth>=2.63.1",
     "requests>=2.34.2", # used internally by google-auth but not automatically installed
@@ -47,6 +47,7 @@ dev = [
     "pytest-asyncio>=1.5.0",
     "psycopg[binary]>=3.3.9",
     "pytest-postgresql>=10.0.0",
+    "pyjwt>=2.10.0",
 ]
 
 [tool.black]
@@ -75,6 +76,7 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"] # Allow use of assert statements in test files
+"examples/*" = ["INP001", "S101", "S106", "PLR2004"] # Standalone examples: no package init; example tests use asserts, literal status codes and dummy credentials
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
