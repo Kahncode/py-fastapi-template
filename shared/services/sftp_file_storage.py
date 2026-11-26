@@ -9,15 +9,20 @@ from .file_storage import FileStorageService
 
 
 class SFTPFileStorageService(FileStorageService):
-    host: str = ""
-    port: int = 22
-    username: str = ""
-    password: str = ""
-    root_path: Path  # Do not assume a default SFTP path
-    sftp_client = None
+    host: str
+    port: int
+    username: str
+    password: str
+    root_path: Path  # No default: the caller chooses the storage root
+    sftp_client: paramiko.SFTPClient | None
 
-    def __init__(self, **kwargs: object) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, host: str, port: int, username: str, password: str, root_path: Path) -> None:
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
+        self.root_path = root_path
+        self.sftp_client = None
 
         # Validate invariants
         if not self.host or not self.username or not self.password or not self.port or not self.root_path:

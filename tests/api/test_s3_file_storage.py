@@ -13,6 +13,7 @@ async def test_s3_file_storage() -> None:
     yaml_config_str = os.getenv("S3_FILE_STORAGE_TEST_CONFIG")
     assert yaml_config_str, "S3_FILE_STORAGE_TEST_CONFIG environment variable not set"
     yaml_config = yaml.safe_load(yaml_config_str)
+    yaml_config.pop("type", None)  # The type key selects the service class in YAML; it is not a constructor argument
     s3 = shared.services.s3_file_storage.S3FileStorageService(**yaml_config)
 
     file_content = "This is a test file."
