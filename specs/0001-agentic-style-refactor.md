@@ -2,26 +2,33 @@
 
 ## Summary
 
-The template targets current versions (FastAPI 0.165, Python 3.15) but its code predates
-agentic-coding workflows and currently does not compile: five files contain invalid
-Python 2-style `except A, B, C:` clauses. This change fixes that blocker and refactors
-the code toward the explicit, statically traceable patterns a current FastAPI codebase
-uses: direct imports instead of string-based symbol resolution on the router path,
-honest type annotations, typed service construction, and no import-time surprises.
+The template targets current versions (FastAPI 0.165, Python 3.15) and its dependency set
+is already current. This change refactors the code toward the explicit, statically
+traceable patterns a current FastAPI codebase uses: direct imports on the router path,
+typed service construction, honest type annotations, and no import-time surprises.
+The YAML-configurable services system and its string-based `services[].type` resolution
+stay — they are the template's deploy-time flexibility feature (see Decisions).
 No guidance files (AGENTS.md, README changes) are included, per the requester's decision.
 Tracking issue: Kahncode/py-fastapi-template#3.
 
+Revision note (spec v2): v1 claimed five files contained syntax errors blocking
+compilation. That was wrong. The `except A, B:` clauses are valid under PEP 758
+(Python 3.14+ allows unparenthesized exception tuples when no `as` follows); the project
+requires Python >=3.15, ruff/black target `py315`, and CI ran green on that exact code
+(run 45443300804, Python 3.15.2, 14 passed / 1 skipped). The v1 finding came from
+checking with Python 3.13. Nothing needs fixing there, and no new check is needed for it.
+
 ## Technical design
 
-### 1. Fix the invalid except clauses (blocker)
+### 1. Except clauses: no change
 
-Parenthesize every multi-exception clause so the package imports at all:
-
-- `shared/core/logging.py:151` — `except (json.JSONDecodeError, UnicodeDecodeError, RuntimeError):`
-- `shared/services/local_file_storage.py:31` — `except (OSError, ValueError):`
-- `shared/services/s3_file_storage.py:50`, `:80`, `:91` — parenthesize `BotoCoreError, ClientError`
-- `shared/services/sql_db.py:199` — `except (ArgumentError, OperationalError, DBAPIError):`
-- `shared/utils/gcp_logging.py:47` — `except (KeyError, TypeError, AttributeError):`
+The unparenthesized `except` tuples in `shared/core/logging.py:151`,
+`shared/services/local_file_storage.py:31`, `shared/services/s3_file_storage.py:50,80,91`,
+`shared/services/sql_db.py:199`, and `shared/utils/gcp_logging.py:47` are valid Python
+3.14+ syntax (PEP 758) — none uses `as`. The existing gates already cover this: ruff and
+black parse with the `py315` target and accept the files, and the pytest workflow
+compiles and runs the suite on 3.15. Parenthesizing is optional style, not a fix; left
+as-is.
 
 ### 2. Explicit router wiring (`api/main.py`)
 
@@ -36,16 +43,22 @@ app.include_router(system_router, prefix="/v1/system")
 app.include_router(dev_router, prefix="/dev")
 ```
 
-The local `include_router` helper and the string form are deleted. Routers are
-code-known structure; resolving them through `importlib` hides the graph from readers,
-IDEs, and coding agents. `resolve_symbol` stays in `shared/core/config.py` for the two
-deploy-time-varying config features (`log_processors`, `services[].type`).
+The local `include_router` helper and the string form are deleted. Routers are code-known
+structure: no config file can change them, so resolving hard-coded strings through
+`importlib` buys no deploy-time flexibility — it only hides the route graph from readers,
+IDEs, and coding agents. This is the only place symbol resolution is removed.
+`resolve_symbol` stays for the two deploy-time-varying config features (`log_processors`,
+`services[].type`).
 
 ### 3. Typed service construction (`shared/services/base_service.py`)
 
-`BaseService.__init__(**kwargs)` currently `setattr`s arbitrary keys onto `self`.
-Give `BaseService` an explicit no-arg `__init__` (pass) and give each concrete service
-explicit, typed constructor parameters:
+The YAML service registry is unchanged: services are still declared in config with
+`services[].type` strings, resolved per deployment, swapped without code edits.
+What changes is only how the YAML dict becomes an instance. Today
+`BaseService.__init__(**kwargs)` does `setattr` for every key, so an unknown or misspelled
+key silently becomes an attribute and fails far from the config file, with no IDE or
+agent-visible surface. Instead, each concrete service gets explicit, typed constructor
+parameters, still fed from the same YAML dict:
 
 ```python
 class S3FileStorageService(FileStorageService):
@@ -53,11 +66,11 @@ class S3FileStorageService(FileStorageService):
                  endpoint_url: str, root_path: Path = Path()) -> None: ...
 ```
 
-`load_config_object`/`load_config_object_array` keep working unchanged: YAML still
-supplies the dict, but construction now validates names and types at one typed place
-instead of spraying attributes. Unknown YAML keys raise `TypeError` instead of being
-silently set. `LocalFileStorageService` gains `root_path: Path` as a constructor
-parameter; `tests/conftest.py` passes it instead of assigning after construction.
+`load_config_object`/`load_config_object_array` keep working unchanged; construction now
+validates names and types in one typed place. Unknown YAML keys raise `TypeError` at
+startup instead of being silently set. `LocalFileStorageService` gains `root_path: Path`
+as a constructor parameter; `tests/conftest.py` passes it instead of assigning after
+construction.
 
 ### 4. Honest annotations and fail-fast service dependency
 
@@ -83,14 +96,25 @@ parameter; `tests/conftest.py` passes it instead of assigning after construction
 
 ## Decisions
 
-- Keep the YAML service registry; do not replace it with static DI. The registry is the
-  template's deploy-time feature (local/S3/GCS/SFTP, Cloud SQL chosen per environment).
-  Static wiring would force code edits per deployment. We only removed indirection where
-  the structure is code-known (routers).
-- Fail fast (503) instead of yielding `None`. Passing `None` into typed handlers was the
-  most error-prone pattern in the dependency path. Alternative considered: keep
+- **Keep the YAML service registry and `services[].type` symbol resolution.** The
+  requester built this for fast service swapping across deployment contexts without
+  rewriting code, and that benefit is real: local/S3/GCS/SFTP storage, Cloud SQL, and
+  log processors are chosen per environment from config. v1's "full re-architecture"
+  candidate (plain pydantic-settings + explicit DI) was listed as *rejected* on the
+  issue and stays rejected. The refactor deliberately does not touch it.
+- **De-indirect only the router path.** The router strings in `api/main.py` are constants
+  in code, not config: they cannot vary per deployment, so the resolver there provides
+  only indirection cost. Direct imports keep the same runtime behavior with a statically
+  traceable graph.
+- **Typed constructors, YAML-fed.** Configuration stays in YAML; only the unvalidated
+  `setattr` spray is replaced. This keeps the registry's flexibility while giving every
+  service an explicit, checkable config surface.
+- **Fail fast (503) instead of yielding `None`.** Passing `None` into typed handlers was
+  the most error-prone pattern in the dependency path. Alternative considered: keep
   `T | None` — rejected because every endpoint would need a None guard.
-- `async_sessionmaker` over legacy `sessionmaker`: current SQLAlchemy 2.x API.
+- **`async_sessionmaker` over legacy `sessionmaker`**: current SQLAlchemy 2.x API.
+- **No parenthesization of except tuples**: valid PEP 758 syntax on the required runtime;
+  ruff/black/CI already accept it.
 
 ## Assumptions
 
@@ -104,11 +128,14 @@ parameter; `tests/conftest.py` passes it instead of assigning after construction
 
 - No AGENTS.md / WARP.md / README or other guidance files (requester's explicit choice).
 - No dependency version changes (already current as of 2026-11-24).
-- No new features, no CI workflow changes, no migration of `services[].type` config keys.
+- No changes to the YAML config contract: `services[].type`, `log_processors`, and
+  existing keys keep their meaning.
+- No except-clause parenthesization migration.
 
 ## Validation criteria
 
-On Python 3.15 via `uv` (0.13.7 can provision cpython-3.15.2), from the repo root:
+Using the project's own Python via `uv` (provisions cpython-3.15.2; requires-python is
+>=3.15, so 3.15 is the only compatibility target):
 
 1. `uv run python -m compileall -q api shared tests` — exit 0.
 2. `uv run ruff check api shared tests` — exit 0 (auto-fix config stays as-is).
