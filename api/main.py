@@ -6,15 +6,10 @@ from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 
 from api.core.config import get_settings
 from shared.core.catch_exception_middleware import CatchExceptionMiddleware
-from shared.core.config import resolve_symbol
 from shared.core.logging import RequestIDLoggerMiddleware, configure_logging, get_logger
 from shared.core.request_context import RequestContextMiddleware
 from shared.core.system import configure_fastapi
-
-
-def include_router(app: FastAPI, router: str, prefix: str | None = None, api_version: int | None = 1) -> None:
-    router = resolve_symbol(router)
-    app.include_router(router, prefix=f"{f"/v{api_version}" if api_version else ""}{f"/{prefix}" if prefix else ""}")
+from shared.core.system import router as system_router
 
 
 def create_app() -> FastAPI:
@@ -49,11 +44,13 @@ def create_app() -> FastAPI:
     # (we don't want the keys to leak), so this should be called from backend servers only which do not require CORS
 
     # Routes
-    include_router(app, "shared.core.system.router", "system")
+    app.include_router(system_router, prefix="/v1/system")
 
     if settings.is_dev_environment():
+        # Imported lazily: dev_routes raises at import outside development environments
+        from api.core.dev_routes import router as dev_router  # noqa: PLC0415
 
-        include_router(app, "api.core.dev_routes.router", "dev", api_version=None)
+        app.include_router(dev_router, prefix="/dev")
 
     end_time = time.perf_counter()
     get_logger().info("[Startup] FastAPI app started.", startup_time_ms=int((end_time - start_time) * 1000))

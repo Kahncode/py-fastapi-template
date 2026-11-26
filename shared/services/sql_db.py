@@ -8,8 +8,8 @@ from typing import Any
 from sqlalchemy import ClauseElement, text
 from sqlalchemy.engine import Result, Row
 from sqlalchemy.exc import ArgumentError, DBAPIError, OperationalError
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from shared.core.logging import get_logger
@@ -117,22 +117,24 @@ class SQLDatabaseService(BaseService):
     """
 
     # Configuration fields
-    url: str = ""
-    engine_args: dict
-    connect_args: dict
+    url: str
+    engine_args: dict[str, object]
+    connect_args: dict[str, object]
 
     # Runtime fields
-    engine: AsyncEngine
-    session_maker: sessionmaker
+    engine: AsyncEngine | None
+    session_maker: async_sessionmaker[AsyncSession] | None
     # Only one session per request, stored in context var
     _session_ctx: ContextVar[AsyncSession | None] = ContextVar("db_session", default=None)
 
-    def __init__(self, **config: object) -> None:
-        self.url = str(config.get("url", ""))
+    def __init__(
+        self, url: str = "", engine_args: dict[str, object] | None = None, connect_args: dict[str, object] | None = None
+    ) -> None:
+        self.url = url
         self.engine = None
         self.session_maker = None
 
-        self.engine_args = config.get("engine_args", {})
+        self.engine_args = engine_args if engine_args is not None else {}
         if "pool_size" not in self.engine_args:
             self.engine_args["pool_size"] = 5  # default pool size
         if "max_overflow" not in self.engine_args:
@@ -142,7 +144,7 @@ class SQLDatabaseService(BaseService):
         if "pool_recycle" not in self.engine_args:
             self.engine_args["pool_recycle"] = 900  # recycle connections every 15 minutes
 
-        self.connect_args = config.get("connect_args", {})
+        self.connect_args = connect_args if connect_args is not None else {}
 
         # Fix pgbouncer error: https://docs.sqlalchemy.org/en/20/dialects/postgresql.html#prepared-statement-name-with-pgbouncer
         # Note that this mostly works but we still have the error, not because of UUID collision but probably because pgbouncer
@@ -195,7 +197,7 @@ class SQLDatabaseService(BaseService):
                     **self.engine_args,
                 )
 
-                self.session_maker = sessionmaker(class_=AsyncSession, expire_on_commit=False)
+                self.session_maker = async_sessionmaker(expire_on_commit=False)
             except ArgumentError, OperationalError, DBAPIError:
                 logger.exception("Failed to create SQLAlchemy async engine")
                 raise
@@ -244,9 +246,9 @@ class SQLDatabaseService(BaseService):
             await self.engine.dispose()
             self.engine = None
 
-    def get_session(self) -> AsyncSession:
+    def get_session(self) -> AsyncSession | None:
         """
-        Return the current request's session, or create one if not set.
+        Return the current request's session, or None if not set.
         """
         return self._session_ctx.get()
 

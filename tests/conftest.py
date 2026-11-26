@@ -99,10 +99,7 @@ def temp_file_storage(tmp_path: Path) -> FileStorageService:
 
     The temporary directory and its contents are deleted after the test.
     """
-    service = LocalFileStorageService()
-    service.root_path = tmp_path
-
-    return service
+    return LocalFileStorageService(root_path=tmp_path)
 
 
 @pytest.fixture

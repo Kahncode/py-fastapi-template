@@ -17,15 +17,22 @@ class S3FileStorageService(FileStorageService):
     Can be used with S3-compatible services such as Wasabi, DigitalOcean Spaces, MinIO, etc.
     """
 
-    bucket_name: str = ""
-    access_key: str = ""
-    secret_key: str = ""
-    endpoint_url: str = ""
-    root_path: Path = Path()  # Assume root of the bucket if not set
-    s3_session = None
+    bucket_name: str
+    access_key: str
+    secret_key: str
+    endpoint_url: str
+    root_path: Path  # Assume root of the bucket if not set
+    s3_session: aioboto3.Session | None
 
-    def __init__(self, **kwargs: object) -> None:
-        super().__init__(**kwargs)
+    def __init__(
+        self, bucket_name: str, access_key: str, secret_key: str, endpoint_url: str, root_path: Path = Path()
+    ) -> None:
+        self.bucket_name = bucket_name
+        self.access_key = access_key
+        self.secret_key = secret_key
+        self.endpoint_url = endpoint_url
+        self.root_path = root_path
+        self.s3_session = None
 
         if not self.bucket_name or not self.access_key or not self.secret_key or not self.endpoint_url:
             msg = "S3FileStorageService requires bucket_name, access_key, secret_key and endpoint_url to be set"

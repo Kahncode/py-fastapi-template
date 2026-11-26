@@ -33,9 +33,9 @@ class GCPCloudSQLDatabaseService(SQLDatabaseService):
     # Runtime vars
     connector: Connector | None = None
 
-    def __init__(self, **config: object) -> None:
-        self.cloud_sql_name = str(config.pop("cloud_sql_name", None))
-        super().__init__(**config)
+    def __init__(self, cloud_sql_name: str, **kwargs: object) -> None:
+        self.cloud_sql_name = cloud_sql_name
+        super().__init__(**kwargs)
 
     def _get_async_creator_func(self) -> Callable[[], Awaitable[Any]] | None:
         return self._get_async_creator

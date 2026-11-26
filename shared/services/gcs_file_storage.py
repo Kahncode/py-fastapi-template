@@ -23,14 +23,18 @@ class GCSFileStorageService(FileStorageService):
         - Alternatively, use a more secure authentication system such as Workload Identity or Secret Manager, depending on your deployment environment.
     """
 
-    bucket_name: str = ""
-    project_id: str = ""
-    root_path: Path = Path()  # Assume root of the bucket if not set
-    gcs_client: storage.Client = None
-    bucket: storage.Bucket = None
+    bucket_name: str
+    project_id: str
+    root_path: Path  # Assume root of the bucket if not set
+    gcs_client: storage.Client | None
+    bucket: storage.Bucket | None
 
-    def __init__(self, **kwargs: object) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, bucket_name: str, project_id: str, root_path: Path = Path()) -> None:
+        self.bucket_name = bucket_name
+        self.project_id = project_id
+        self.root_path = root_path
+        self.gcs_client = None
+        self.bucket = None
 
         # Validate invariants
         if not self.bucket_name or not self.project_id:

@@ -6,7 +6,10 @@ from .file_storage import FileStorageService
 
 
 class LocalFileStorageService(FileStorageService):
-    root_path: Path  # Do not assume a default SFTP path
+    root_path: Path
+
+    def __init__(self, root_path: Path) -> None:
+        self.root_path = root_path
 
     def get_url(self, storage_path: Path) -> str:
         """Return a file:// URL for the local file."""

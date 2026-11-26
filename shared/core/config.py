@@ -1,4 +1,5 @@
 import importlib
+import logging
 import os
 import re
 from collections.abc import Callable
@@ -15,9 +16,6 @@ from structlog.types import EventDict
 
 from shared.core.app_environment import AppEnvironment
 from shared.services.base_service import BaseService
-
-# Load .env file if present as soon as this module is imported
-load_dotenv()
 
 
 def load_yaml_config(path: str | Path) -> dict[str, Any]:
@@ -82,7 +80,9 @@ def load_config_object_array[T](objects: list[dict], cls_name_key: str, base_cla
         raise TypeError(msg)
     serialized_objects = []
     for obj_dict in objects:
-        serialized_object = load_config_object(obj_dict, obj_dict[cls_name_key], base_class)
+        # The cls_name_key selects the class; the rest are constructor arguments
+        kwargs = {k: v for k, v in obj_dict.items() if k != cls_name_key}
+        serialized_object = load_config_object(kwargs, obj_dict[cls_name_key], base_class)
         if serialized_object is None:
             msg = f"Could not load object from config {obj_dict}"
             raise ValueError(msg)
@@ -156,13 +156,16 @@ def override_settings_class(new_class: type[Settings]) -> None:
 def get_settings() -> Settings:
     global _settings_instance  # noqa: PLW0603
     if _settings_instance is None:
+        # Load .env before reading the environment, on first settings use rather than at import time
+        load_dotenv()
+
         yaml_path = os.getenv("CONFIG_YAML_PATH")
         if not yaml_path:
             msg = "CONFIG_YAML_PATH environment variable is not set. Cannot load YAML config."
             raise RuntimeError(msg)
 
-        # Using print here to avoid circular import with shared.core.logging
-        print("Loading configuration from: ", yaml_path)  # noqa: T201
+        # stdlib logging: shared.core.logging configures structlog and imports this module
+        logging.getLogger(__name__).info("Loading configuration from %s", yaml_path)
 
         # Pydantic will merge env vars (top level only), .env, and yaml_config
         # We are not using pydancic's built-in yaml support because we want to
